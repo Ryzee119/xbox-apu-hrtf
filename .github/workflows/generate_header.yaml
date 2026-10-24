@@ -12,28 +12,64 @@ jobs:
       contents: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install h5py
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install h5py numpy matplotlib
 
-    - name: Generate C Header
-      run: |
-        python convert_hrtf.py KEMAR_GRAS_EarSim_LargeEars_FreeFieldCompMinPhase_48kHz.sofa -o nxaudio_hrtf.h
+      - name: Generate C Header
+        run: |
+          python convert_hrtf.py KEMAR_GRAS_EarSim_LargeEars_FreeFieldCompMinPhase_48kHz.sofa -o nxaudio_hrtf.h | tee datasheet_log.txt
 
-    - name: Upload Release Asset
-      uses: softprops/action-gh-release@v2
-      # Only upload if the workflow was triggered by a tag/release
-      if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
-      with:
-        files: nxaudio_hrtf.h
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate Verification Datasheet Plot
+        env:
+          MPLBACKEND: Agg
+        run: |
+          python verify_hrtf.py nxaudio_hrtf.h --save hrtf_datasheet.png
+
+      - name: Prepare Release Notes with Generated Image
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
+        run: |
+          cat << 'EOF' > release_body.md
+          ### Original Xbox MCPX APU — HRTF Verification Datasheet
+          ![HRTF Verification Datasheet](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/hrtf_datasheet.png)
+
+          <details>
+          <summary><b>Hardware Conversion Log & Verification Table</b></summary>
+
+          ```text
+          EOF
+          cat datasheet_log.txt >> release_body.md
+          cat << 'EOF' >> release_body.md
+          ```
+          </details>
+          EOF
+
+      - name: Upload Artifacts (Manual Workflow Run)
+        uses: actions/upload-artifact@v4
+        with:
+          name: nxaudio-hrtf-assets
+          path: |
+            nxaudio_hrtf.h
+            hrtf_datasheet.png
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        # Only upload to a GitHub Release if triggered by a tag or release event
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
+        with:
+          body_path: release_body.md
+          files: |
+            nxaudio_hrtf.h
+            hrtf_datasheet.png
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
