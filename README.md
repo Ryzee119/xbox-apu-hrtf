@@ -2,7 +2,7 @@
 
 A Python DSP utility suite to convert standard **SOFA** (Spatially Oriented Format for Acoustics) HRTF datasets into the proprietary 31-tap, 8-bit sign-magnitude minifloat C-header format (`nxaudio_hrtf.h`) expected by the original Xbox **MCPX Audio Processing Unit (APU)** and [`nxdk-audio`](https://github.com/Ryzee119/nxdk-audio).
 
-![Original Xbox MCPX APU — 31-Tap HRTF Verification Datasheet](https://github.com/Ryzee119/<REPO_NAME>/releases/latest/download/hrtf_datasheet.png)
+![Original Xbox MCPX APU — 31-Tap HRTF Verification Datasheet](https://github.com/Ryzee119/xbox-apu-hrtf/releases/latest/download/hrtf_datasheet.png)
 
 ## Overview
 
